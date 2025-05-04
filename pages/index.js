@@ -5,23 +5,24 @@ import FormValidator from "../components/FormValidator.js";
 
 let todos = initialTodos;
 
-function renderTodos() {
-  todosList.innerHTML = "";
-  todos.forEach((item) => {
-    const todo = generateTodo(item);
-    todosList.append(todo);
-  });
-}
+const section = {
+  addItem: (element) => {
+    todosList.append(element);
+  },
+};
 
-function handleDelete(todoId) {
-  todos = todos.filter((todo) => todo.id !== todoId);
-  renderTodos();
+const renderTodo = (item) => {
+  const todo = generateTodo(item);
+  section.addItem(todo);
+};
+
+function handleDelete() {
   updateCounter();
 }
 
 const addTodoButton = document.querySelector(".button_action_add");
 const addTodoPopup = document.querySelector("#add-todo-popup");
-const addTodoForm = addTodoPopup.querySelector(".popup__form");
+const addTodoForm = document.forms["add-todo-form"];
 const addTodoCloseBtn = addTodoPopup.querySelector(".popup__close");
 const todosList = document.querySelector(".todos__list");
 const counterText = document.querySelector(".counter__text");
@@ -65,15 +66,13 @@ addTodoForm.addEventListener("submit", (evt) => {
   const id = uuidv4();
   const values = { name, date, id };
   todos.push(values);
-  const todo = generateTodo(values);
-  todosList.append(todo);
+  renderTodo(values);
   newTodoValidator.resetValidation();
   closeModal(addTodoPopup);
 });
 
 initialTodos.forEach((item) => {
-  const todo = generateTodo(item);
-  todosList.append(todo);
+  renderTodo(item);
 });
 
 updateCounter();
