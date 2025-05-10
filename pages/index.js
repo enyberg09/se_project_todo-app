@@ -2,86 +2,79 @@ import { v4 as uuidv4 } from "https://jspm.dev/uuid";
 import { initialTodos, validationConfig } from "../utils/constants.js";
 import Todo from "../components/Todo.js";
 import FormValidator from "../components/FormValidator.js";
+import Section from "../components/Section.js";
+import PopupWithForm from "../components/PopupWithForm.js";
+import TodoCounter from "../components/TodoCounter.js";
 
 let todos = initialTodos;
 
-const section = {
-  addItem: (element) => {
-    todosList.append(element);
-  },
-};
+const todoCounter = new TodoCounter(initialTodos, ".counter__text");
 
-const renderTodo = (item) => {
-  const todo = generateTodo(item);
-  section.addItem(todo);
-};
-
-function handleDelete() {
-  updateCounter();
+function handleCheck(completed) {
+  todoCounter.updateCompleted(completed);
 }
 
-const addTodoButton = document.querySelector(".button_action_add");
-const addTodoPopup = document.querySelector("#add-todo-popup");
-const addTodoForm = document.forms["add-todo-form"];
-const addTodoCloseBtn = addTodoPopup.querySelector(".popup__close");
-const todosList = document.querySelector(".todos__list");
-const counterText = document.querySelector(".counter__text");
-
-function updateCounter() {
-  const totalTodos = todos.length;
-  const completedTodos = todos.filter((todo) => todo.completed).length;
-  counterText.textContent = `Showing ${completedTodos} out of ${totalTodos} completed`;
+function handleDelete(completed, todoData) {
+  if (completed) {
+    todoCounter.updateCompleted(false);
+  }
+  todoCounter.updateTotal(false);
+  todos = todos.filter((todo) => todo.id !== todoData.id);
+  const todoElement = document.querySelector(`[data-todo-id="${todoData.id}"]`);
+  if (todoElement) {
+    todoElement.remove();
+  }
 }
-
-const openModal = (modal) => {
-  modal.classList.add("popup_visible");
-};
-
-const closeModal = (modal) => {
-  modal.classList.remove("popup_visible");
-};
 
 const generateTodo = (data) => {
-  const todo = new Todo(data, "#todo-template", handleDelete, updateCounter);
+  const todo = new Todo(
+    data,
+    "#todo-template",
+    handleDelete,
+    null,
+    handleCheck
+  );
   const todoElement = todo.getView();
   return todoElement;
 };
 
+const addTodoButton = document.querySelector(".button_action_add");
+const addTodoForm = document.forms["add-todo-form"];
+
+const section = new Section({
+  items: todos,
+  renderer: (item) => {
+    return generateTodo(item);
+  },
+  containerSelector: ".todos__list",
+});
+
+section.renderItems();
+
+const addTodoPopup = new PopupWithForm({
+  popupSelector: "#add-todo-popup",
+  handleFormSubmit: (inputValues) => {
+    const name = inputValues.name;
+    const dateInput = inputValues.date;
+
+    const date = new Date(dateInput);
+    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+
+    const id = uuidv4();
+    const values = { name, date, id };
+    todos.push(values);
+    const todoElement = generateTodo(values);
+    section.addItem(todoElement);
+    todoCounter.updateTotal(true);
+    newTodoValidator.resetValidation();
+    addTodoPopup.close();
+  },
+});
+addTodoPopup.setEventListeners();
+
 addTodoButton.addEventListener("click", () => {
-  openModal(addTodoPopup);
+  addTodoPopup.open();
 });
-
-addTodoCloseBtn.addEventListener("click", () => {
-  closeModal(addTodoPopup);
-});
-
-addTodoForm.addEventListener("submit", (evt) => {
-  evt.preventDefault();
-  const name = evt.target.name.value;
-  const dateInput = evt.target.date.value;
-
-  const date = new Date(dateInput);
-  date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-
-  const id = uuidv4();
-  const values = { name, date, id };
-  todos.push(values);
-  renderTodo(values);
-  newTodoValidator.resetValidation();
-  closeModal(addTodoPopup);
-});
-
-initialTodos.forEach((item) => {
-  renderTodo(item);
-});
-
-updateCounter();
 
 const newTodoValidator = new FormValidator(validationConfig, addTodoForm);
 newTodoValidator.enableValidation();
-
-document.addEventListener("keydown", (evt) => {
-  if (evt.key === "Escape") {
-    closeModal(addTodoPopup);
-  }
-});

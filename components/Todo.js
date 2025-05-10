@@ -1,5 +1,5 @@
 class Todo {
-  constructor(data, selector, handleDelete, updateCounter) {
+  constructor(data, selector, handleDelete, updateCounter, handleCheck) {
     if (typeof handleDelete !== "function") {
       throw new Error("handleDelete must be a function");
     }
@@ -12,23 +12,23 @@ class Todo {
     this._templateElement = document.querySelector(selector);
     this._handleDeleteTodo = handleDelete;
     this._updateCounter = updateCounter;
+    this._handleCheck = handleCheck;
+    this._handleDelete = handleDelete;
   }
 
   _setEventListeners() {
-    this._todoCheckboxEl.addEventListener("change", () => {
-      this.toggleComplete();
-    });
-
     this._todoDeleteBtn = this._todoElement.querySelector(".todo__delete-btn");
     this._todoDeleteBtn.addEventListener("click", () => {
-      this._todoElement.remove();
-      this._handleDeleteTodo(this._data.id);
+      this._handleDeleteTodo(this._data.completed, this._data);
+    });
+    this._todoCheckboxEl.addEventListener("change", () => {
+      this.toggleComplete();
+      this._handleCheck(this._data.completed);
     });
   }
 
   toggleComplete() {
     this._data.completed = !this._data.completed;
-    this._updateCounter();
   }
 
   _generateCheckBoxEl() {
@@ -43,6 +43,8 @@ class Todo {
     this._todoElement = this._templateElement.content
       .querySelector(".todo")
       .cloneNode(true);
+
+    this._todoElement.setAttribute("data-todo-id", this._data.id);
 
     const todoNameEl = this._todoElement.querySelector(".todo__name");
     const todoDate = this._todoElement.querySelector(".todo__date");
