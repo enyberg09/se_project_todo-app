@@ -1,5 +1,5 @@
 class Todo {
-  constructor(data, selector, handleDelete, updateCounter, handleCheck) {
+  constructor(data, selector, handleDelete, handleCheck) {
     if (typeof handleDelete !== "function") {
       throw new Error("handleDelete must be a function");
     }
@@ -11,14 +11,13 @@ class Todo {
     this._data = data;
     this._templateElement = document.querySelector(selector);
     this._handleDeleteTodo = handleDelete;
-    this._updateCounter = updateCounter;
     this._handleCheck = handleCheck;
-    this._handleDelete = handleDelete;
   }
 
   _setEventListeners() {
     this._todoDeleteBtn = this._todoElement.querySelector(".todo__delete-btn");
     this._todoDeleteBtn.addEventListener("click", () => {
+      this._todoElement.remove();
       this._handleDeleteTodo(this._data.completed, this._data);
     });
     this._todoCheckboxEl.addEventListener("change", () => {
